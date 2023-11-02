@@ -27,7 +27,7 @@ bdb_large_sector_count:     dd 0
 
 
 ; extended boot record
-ebr_drive_number            db 0 ; 0x00 floppy, 0x80 hdd
+ebr_drive_number:           db 0 ; 0x00 floppy, 0x80 hdd
                             db 0 ; reserved
 ebr_signature:              db 29h
 ebr_volume_id:              db 10h, 20h, 30h, 40h ; serial number
