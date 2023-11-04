@@ -83,6 +83,23 @@ main:
 .halt:
   jmp .halt
 
+
+; error handlers
+floppy_error:
+  mov si, msg_read_failed
+  call puts
+  jmp wait_key_and_reboot
+
+wait_key_and_reboot:
+  mov ah, 0
+  int 16h
+  jmp 0FFFFh:0
+  hlt
+
+.halt:
+  cli ; disable interrupts 
+  hlt 
+
 ; disk routines
 
 ; convert lba address to chs address
@@ -115,10 +132,68 @@ lba_to_chs:
   ret
 
 ; read sectors from a disk
-; TODO
+; param
+; - ax: lba address
+; - cl: number of sectors to read (up to 128)
+; - dl: drive number
+; - ex:bx: memory address where to store read data
+disk_read:
+  push ax ; save registers we will modify
+  push bx 
+  push cx 
+  push dx 
+  push di
+
+  push cx ; temporarily save cl (number of sectors to read)
+  call lba_to_chs ; compute chs
+  pop ax ; al = number of sectors to read
+  
+  mov ah, 02h
+  mov di, 3 ; retry count
+
+.retry:
+  pusha ; save all registers, we dont know what the bios modifies
+  stc ; set carry flag, some BIOSes dont set it
+  
+  int 13h ; carry flag cleared = success
+  jnc .done ; jump if carry not set
+
+  ; read failed
+  popa
+  call disk_reset
+
+  dec di
+  test di, di
+  jnz .retry
+
+.fail:
+  jmp floppy_error
+
+.done:
+  popa
+
+  push ax ; restore modified registers
+  push bx 
+  push cx 
+  push dx 
+  push di
+  ret
+
+
+disk_reset:
+  pusha
+  mov ah, 0
+  stc
+  int 13h
+  jc floppy_error
+  popa
+  ret
+
 
 msg_hello:
   db 'Hello, World!', ENDL, 0
+msg_read_failed:
+  db 'Read failed!', ENDL, 0
 
 times 510-($-$$) db 0 ; pad with zeros until 510 bytes
 dw 0AA55h             ; boot signature
