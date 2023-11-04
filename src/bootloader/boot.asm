@@ -83,6 +83,39 @@ main:
 .halt:
   jmp .halt
 
+; disk routines
+
+; convert lba address to chs address
+; param:
+; - ax : lba address
+; return:
+; - cx [bits 0-5]: sector number
+; - cx [bits 6-15]: cylinder
+; - dh: head
+
+lba_to_chs:
+  xor dx, dx ; dx = 0
+  div word [bdb_sectors_per_track] ; ax = lba / bdb_sectors_per_track
+  ; dx = lba % bdb_sectors_per_track
+
+  inc dx ; dx = (lba % bdb_sectors_per_track + 1) = sector
+  mov cx, dx ; cx = sector
+
+  xor dx, dx ; dx = 0
+  div word [bdb_heads] ; ax = (lba / bdb_sectors_per_track) / heads = cylinder
+  ; dx = (lba / bdb_sectors_per_track) % heads = head
+  mov dh, dl ; dh = head
+  mov ch, al ; ch = cylinder (lower 8 bits)
+  shl ah, 6 
+  or cl, ah ; put upper 2 bits of cylinder to cl
+
+  pop ax
+  mov dl, al ; restore dl
+  pop ax
+  ret
+
+; read sectors from a disk
+; TODO
 
 msg_hello:
   db 'Hello, World!', ENDL, 0
