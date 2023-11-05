@@ -6,8 +6,9 @@
 bits 16
 org 0x7c00
 
-
+;
 ; fat12 header
+;
 jmp short start
 nop
 
@@ -25,8 +26,9 @@ bdb_heads:                  dw 2
 bdb_hidden_sectors:         dd 0
 bdb_large_sector_count:     dd 0
 
-
+;
 ; extended boot record
+;
 ebr_drive_number:           db 0 ; 0x00 floppy, 0x80 hdd
                             db 0 ; reserved
 ebr_signature:              db 29h
@@ -34,9 +36,9 @@ ebr_volume_id:              db 10h, 20h, 30h, 40h ; serial number
 ebr_volume_label:           db 'miika os   '      ; 11 bytes
 ebr_system_id:              db 'FAT12   '         ; 8 bytes
 
-
+;
 ; code
-
+;
 start:
   jmp main
 
@@ -83,8 +85,9 @@ main:
 .halt:
   jmp .halt
 
-
+;
 ; error handlers
+;
 floppy_error:
   mov si, msg_read_failed
   call puts
@@ -100,7 +103,9 @@ wait_key_and_reboot:
   cli ; disable interrupts 
   hlt 
 
+;
 ; disk routines
+;
 
 ; convert lba address to chs address
 ; param:
@@ -179,7 +184,6 @@ disk_read:
   push di
   ret
 
-
 disk_reset:
   pusha
   mov ah, 0
@@ -188,7 +192,6 @@ disk_reset:
   jc floppy_error
   popa
   ret
-
 
 msg_hello:
   db 'Hello, World!', ENDL, 0
