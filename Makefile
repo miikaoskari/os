@@ -34,7 +34,3 @@ always:
 # Clean
 clean:
 	rm -rf $(BUILD_DIR)/*
-
-# Run
-run:
-	qemu-system-i386 -fda $(BUILD_DIR)/main_floppy.img

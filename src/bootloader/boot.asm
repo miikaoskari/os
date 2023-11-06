@@ -76,14 +76,22 @@ main:
   mov ss, ax      ; stack segment is data segment
   mov sp, 0x7c00  ; stack grows down from 0x7c00
 
+  ; read from floppy
+  ; bios should set dl to drive number
+  mov [ebr_drive_number], dl
+
+  mov ax, 1 ; lba=1, second sector from disk
+  mov cl, 1 ; 1 sector to read
+  mov bx, 0x7E00
+  call disk_read
+
+
   ; print message
   mov si, msg_hello
   call puts
 
+  cli ; disable interrupt, cpu can't get out of halted state
   hlt
-
-.halt:
-  jmp .halt
 
 ;
 ; error handlers
@@ -116,6 +124,9 @@ wait_key_and_reboot:
 ; - dh: head
 
 lba_to_chs:
+  push ax
+  push dx
+
   xor dx, dx ; dx = 0
   div word [bdb_sectors_per_track] ; ax = lba / bdb_sectors_per_track
   ; dx = lba % bdb_sectors_per_track
@@ -177,13 +188,16 @@ disk_read:
 .done:
   popa
 
-  push ax ; restore modified registers
-  push bx 
-  push cx 
-  push dx 
-  push di
+  pop di ; restore modified registers
+  pop dx 
+  pop cx 
+  pop bx 
+  pop ax
   ret
 
+; reset disk controller
+; param:
+; dl: drive number
 disk_reset:
   pusha
   mov ah, 0
